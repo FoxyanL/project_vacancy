@@ -27,9 +27,23 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#">Контакты</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Войти</a>
-                    </li>
+                    {% if user.is_authenticated %}
+                        <!-- Кнопка "Личный кабинет" для авторизованных пользователей -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'profile' %}">Личный кабинет</a>
+                        </li>
+                        <!-- Кнопка выхода -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'user_logout' %}">Выход</a>
+                        </li>
+                    {% else %}
+                        <!-- Кнопка "Войти" для неавторизованных пользователей -->
+                        <li class="nav-item">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#authModal">
+                                Войти
+                            </button>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
@@ -44,5 +58,35 @@
 
     {% block extra_js %}
     {% endblock %}
+
+    <!-- Модальное окно Войти -->
+    <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="authModalLabel">Авторизация</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Войти</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <p>Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

@@ -1,0 +1,22 @@
+{% extends 'base_generic.html' %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="mb-4">Личный кабинет</h2>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Добро пожаловать, {{ user.username }}!</h5>
+                <p class="card-text">Email: {{ user.email }}</p>
+                
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'edit_profile' %}" class="btn btn-warning">Изменить профиль</a>
+                    <a href="{% url 'logout' %}" class="btn btn-danger">Выйти</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
