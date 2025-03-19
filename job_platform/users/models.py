@@ -20,7 +20,7 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     email = models.EmailField(unique=True)
 
-    objects = UserManager()  # Используем кастомный менеджер
+    objects = UserManager()
 
     def __str__(self):
         return self.username
@@ -31,7 +31,6 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(blank=True)
     location = models.CharField(max_length=100, blank=True)
-    # Добавьте другие поля, если нужно
 
     def __str__(self):
         return f"{self.user.username}'s profile"

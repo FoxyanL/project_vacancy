@@ -5,97 +5,37 @@
     <h1 class="text-center">Добро пожаловать на платформу вакансий</h1>
     <p class="text-center">Найдите свою мечту-работу или стажировку сегодня!</p>
 
-    <!-- Форма поиска вакансий -->
-    <div class="row justify-content-center mb-4">
-        <div class="col-md-8">
-            <form method="GET" action="#" class="d-flex">
-                <input type="text" class="form-control" placeholder="Ищите вакансии" name="search" aria-label="Поиск">
-                <button class="btn btn-primary ms-2" type="submit">Поиск</button>
-            </form>
-        </div>
+    {% if message %}
+    <div class="alert alert-warning">
+        {{ message }}
     </div>
-
-    <!-- Раздел с вакансиями -->
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <img src="https://via.placeholder.com/150" class="card-img-top" alt="Изображение вакансии">
-                <div class="card-body">
-                    <h5 class="card-title">Разработчик ПО</h5>
-                    <p class="card-text">Работаем над современными решениями.</p>
-                    <a href="#" class="btn btn-primary">Подать заявку</a>
-                </div>
+    {% else %}
+        
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-8">
+                <form method="GET" action="#" class="d-flex">
+                    <input type="text" class="form-control" placeholder="Ищите вакансии" name="search" aria-label="Поиск">
+                    <button class="btn btn-primary ms-2" type="submit">Поиск</button>
+                </form>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Кнопка Войти -->
-
-
-<!-- Модальное окно аутентификации -->
-<div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="authModalLabel">Войти или зарегистрироваться</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Вкладки -->
-                <ul class="nav nav-tabs" id="authTabs">
-                    <li class="nav-item">
-                        <a class="nav-link active" id="login-tab" data-bs-toggle="tab" href="#login">Вход</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="register-tab" data-bs-toggle="tab" href="#register">Регистрация</a>
-                    </li>
-                </ul>
-
-                <div class="tab-content mt-3">
-                    <!-- Форма входа -->
-                    <div class="tab-pane fade show active" id="login">
-                        <form method="POST" action="{% url 'login' %}">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="loginUsername" class="form-label">Имя пользователя</label>
-                                <input type="text" class="form-control" id="loginUsername" name="username" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="loginPassword" class="form-label">Пароль</label>
-                                <input type="password" class="form-control" id="loginPassword" name="password" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Войти</button>
-                        </form>
-                    </div>
-
-                    <!-- Форма регистрации -->
-                    <div class="tab-pane fade" id="register">
-                        <form method="POST" action="{% url 'register' %}">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="registerUsername" class="form-label">Имя пользователя</label>
-                                <input type="text" class="form-control" id="registerUsername" name="username" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="registerEmail" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="registerEmail" name="email" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="registerPassword" class="form-label">Пароль</label>
-                                <input type="password" class="form-control" id="registerPassword" name="password1" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="registerPassword2" class="form-label">Повторите пароль</label>
-                                <input type="password" class="form-control" id="registerPassword2" name="password2" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
-                        </form>
+        
+        <div class="row">
+            {% for vacancy in vacancies %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ vacancy.title }}</h5>
+                        <p class="card-text">{{ vacancy.description }}</p>
+                        <a href="{% url 'vacancy_detail' vacancy.id %}" class="btn btn-primary">Подать заявку</a>
                     </div>
                 </div>
             </div>
+            {% empty %}
+            <p class="text-center">Вакансий не найдено.</p>
+            {% endfor %}
         </div>
-    </div>
+    {% endif %}
 </div>
-
 {% endblock %}

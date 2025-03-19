@@ -8,6 +8,7 @@ from . import views
 from django.contrib.auth import views as auth_views
 
 
+
 schema_view = get_schema_view(
     openapi.Info(
         title="API Сервиса Вакансий",
@@ -19,16 +20,18 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path("", home, name="home"),  # Добавили маршрут для главной
+    path("", home, name="home"),
     path("admin/", admin.site.urls),
     path("api/", include("applications.urls")),
     path("api/users/", include("users.urls")),
     path('login/', views.user_login, name='login'),
     path('register/', views.user_register, name='register'),
     path('logout/', views.user_logout, name='user_logout'),
-    path('profile/', views.profile, name='profile'),  # Профиль пользователя
+    path('profile/', views.profile, name='profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('vacancy/<int:vacancy_id>/', views.vacancy_detail, name='vacancy_detail'),
+    path('applications/', views.applications, name='applications'),
 ]
 
 schema_view = get_schema_view(

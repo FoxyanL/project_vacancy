@@ -19,7 +19,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Главная</a>
+                        <a class="nav-link" href="{% url 'home' %}">Главная</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#">О проекте</a>
@@ -28,16 +28,20 @@
                         <a class="nav-link" href="#">Контакты</a>
                     </li>
                     {% if user.is_authenticated %}
-                        <!-- Кнопка "Личный кабинет" для авторизованных пользователей -->
+                        
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'profile' %}">Личный кабинет</a>
                         </li>
-                        <!-- Кнопка выхода -->
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'applications' %}">Мои заявки</a>
+                        </li>
+                        
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'user_logout' %}">Выход</a>
                         </li>
                     {% else %}
-                        <!-- Кнопка "Войти" для неавторизованных пользователей -->
+                        
                         <li class="nav-item">
                             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#authModal">
                                 Войти
@@ -59,7 +63,7 @@
     {% block extra_js %}
     {% endblock %}
 
-    <!-- Модальное окно Войти -->
+    
     <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">

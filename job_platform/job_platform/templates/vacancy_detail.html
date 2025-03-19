@@ -1,0 +1,30 @@
+{% extends 'base_generic.html' %}
+
+{% block title %}Подать заявку на вакансию{% endblock %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+        <div class="container mt-5">
+            <h2>Подать заявку на вакансию: {{ vacancy.title }}</h2>
+            <p>{{ vacancy.description }}</p>
+
+            {% if is_applied %}
+                <a href="{% url 'applications' %}" class="btn btn-success">Заявка подана. Перейти в Мои заявки</a>
+            {% else %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Сообщение</label>
+                        <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Подать заявку</button>
+                </form>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="container mt-5">
+            <h3>Для подачи заявки необходимо авторизоваться.</h3>
+            <p>Пожалуйста, <a href="{% url 'login' %}">войдите</a>, чтобы подать заявку на вакансию.</p>
+        </div>
+    {% endif %}
+{% endblock %}

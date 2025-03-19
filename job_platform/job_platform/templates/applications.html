@@ -1,0 +1,25 @@
+{% extends 'base_generic.html' %}
+{% load tz %}
+{% block title %}Мои заявки{% endblock %}
+
+{% block content %}
+<h1>Мои заявки</h1>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Вакансия</th>
+            <th>Статус</th>
+            <th>Дата подачи</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for application in applications %}
+            <tr>
+                <td>{{ application.vacancy.title }}</td>
+                <td>{{ application.status }}</td>
+                <td>{{ application.date_submitted|localtime|date:"F j, Y, g:i a" }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

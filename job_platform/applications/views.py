@@ -2,8 +2,8 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from .models import Application
 from .serializers import ApplicationSerializer
-from jobs.models import Job
-from jobs.serializers import JobSerializer
+from jobs.models import Vacancy
+from jobs.serializers import VacancySerializer
 from django.db import models
 from django.conf import settings
 from rest_framework import viewsets
@@ -16,15 +16,15 @@ class StudentApplicationsView(generics.ListAPIView):
         return Application.objects.filter(student=self.request.user)
 
 class EmployerVacanciesView(generics.ListAPIView):
-    serializer_class = JobSerializer
+    serializer_class = VacancySerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Job.objects.filter(company=self.request.user.username)
+        return Vacancy.objects.filter(employer=self.request.user)
 
 class ApplicationView(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    vacancy = models.ForeignKey(Vacancy, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=[
         ('pending', 'На рассмотрении'),
         ('approved', 'Одобрено'),
@@ -32,7 +32,7 @@ class ApplicationView(models.Model):
     ], default='pending')
 
     def __str__(self):
-        return f"{self.student.username} -> {self.job.title} ({self.status})"
+        return f"{self.student.username} -> {self.vacancy.title} ({self.status})"
 
 class ApplicationViewSet(viewsets.ModelViewSet):
     queryset = Application.objects.all()
