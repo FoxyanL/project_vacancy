@@ -6,24 +6,19 @@ from django.urls import path, include
 from .views import home
 from . import views
 from django.contrib.auth import views as auth_views
+from .views import VacancyList, ApplicationList
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from .swagger import schema_view
 
-
-
-schema_view = get_schema_view(
-    openapi.Info(
-        title="API Сервиса Вакансий",
-        default_version='v1',
-        description="Документация API",
-    ),
-    public=True,
-    permission_classes=[permissions.AllowAny],
-)
 
 urlpatterns = [
     path("", home, name="home"),
     path("admin/", admin.site.urls),
-    path("api/", include("applications.urls")),
-    path("api/users/", include("users.urls")),
+    path('api/vacancies/', VacancyList.as_view(), name='vacancy-list'),
+    path('api/applications/', ApplicationList.as_view(), name='application-list'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('swagger/json/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('swagger/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('login/', views.user_login, name='login'),
     path('register/', views.user_register, name='register'),
     path('logout/', views.user_logout, name='user_logout'),
@@ -34,16 +29,3 @@ urlpatterns = [
     path('applications/', views.applications, name='applications'),
 ]
 
-schema_view = get_schema_view(
-    openapi.Info(
-        title="API Сервиса Вакансий",
-        default_version='v1',
-        description="Документация API",
-    ),
-    public=True,
-    permission_classes=[permissions.AllowAny],
-)
-
-urlpatterns += [
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger'),
-]

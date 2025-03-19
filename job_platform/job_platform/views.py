@@ -14,7 +14,35 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.contrib.auth.models import AnonymousUser
 from django.utils.timezone import localtime
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .serializers import VacancySerializer, ApplicationSerializer
+from rest_framework.permissions import AllowAny
 
+
+class VacancyList(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        vacancies = Vacancy.objects.all()
+        serializer = VacancySerializer(vacancies, many=True)
+        return Response(serializer.data)
+
+class ApplicationList(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        applications = Application.objects.filter(student=request.user)
+        serializer = ApplicationSerializer(applications, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ApplicationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(student=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 User = get_user_model()
