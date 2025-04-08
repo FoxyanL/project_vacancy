@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import ProfileForm
+from .forms import ProfileForm, ProfileUpdateForm
 from users.models import Profile
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -17,8 +17,14 @@ from django.utils.timezone import localtime
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import VacancySerializer, ApplicationSerializer
+from jobs.serializers import VacancySerializer
+from applications.serializers import ApplicationSerializer
 from rest_framework.permissions import AllowAny
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from .serializers import ProfileUpdateSerializer, UserUpdateSerializer
+from rest_framework.permissions import IsAuthenticated
 
 
 class VacancyList(APIView):
@@ -46,20 +52,6 @@ class ApplicationList(APIView):
 
 
 User = get_user_model()
-
-
-@login_required
-def edit_profile(request):
-    user = request.user
-    if request.method == 'POST':
-        form = ProfileForm(request.POST, instance=user)
-        if form.is_valid():
-            form.save()
-            return redirect('profile')
-    else:
-        form = ProfileForm(instance=user)
-    
-    return render(request, 'edit_profile.html', {'form': form})
 
 @login_required
 def profile(request):
@@ -115,16 +107,24 @@ def user_register(request):
 
 @login_required
 def edit_profile(request):
+    user_form = ProfileUpdateForm(request.POST or None, instance=request.user)
     try:
         profile = request.user.profile
     except Profile.DoesNotExist:
-        profile = None
-
-    if profile is None:
         profile = Profile.objects.create(user=request.user)
 
-    form = ProfileForm(instance=profile)
-    return render(request, 'edit_profile.html', {'form': form})
+    if request.method == 'POST':
+        if user_form.is_valid():
+            user_form.save()
+            profile_form = ProfileForm(request.POST, instance=profile)
+            if profile_form.is_valid():
+                profile_form.save()
+                return redirect('profile')
+    else:
+        profile_form = ProfileForm(instance=profile)
+
+    return render(request, 'edit_profile.html', {'user_form': user_form, 'profile_form': profile_form})
+
 
 def user_logout(request):
     logout(request)
@@ -161,4 +161,22 @@ def applications(request):
         application.date_submitted = localtime(application.date_submitted)
 
     return render(request, 'applications.html', {'applications': applications})
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    user_serializer = UserUpdateSerializer(instance=request.user, data=request.data)
+    profile_serializer = ProfileUpdateSerializer(instance=request.user.profile, data=request.data)
+
+    user_serializer.is_valid(raise_exception=True)
+    profile_serializer.is_valid(raise_exception=True)
+
+    user_serializer.save()
+    profile_serializer.save()
+
+    return Response({
+        'user': user_serializer.data,
+        'profile': profile_serializer.data
+    })
+
 

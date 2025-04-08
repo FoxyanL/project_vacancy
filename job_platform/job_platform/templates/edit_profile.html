@@ -7,32 +7,49 @@
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">Добро пожаловать, {{ user.username }}!</h5>
-            
+
             <form method="POST">
                 {% csrf_token %}
                 
-                <div class="form-group mb-3">
+                <div class="mb-3">
                     <label for="id_username" class="form-label">Имя пользователя</label>
-                    {{ form.username }}
+                    <input type="text" name="username" value="{{ user_form.username.value }}" class="form-control" id="id_username">
                 </div>
 
-                <div class="form-group mb-3">
+                <div class="mb-3">
                     <label for="id_email" class="form-label">Email</label>
-                    {{ form.email }}
+                    <input type="email" name="email" value="{{ user_form.email.value }}" class="form-control" id="id_email">
                 </div>
 
-                <div class="form-group mb-3">
-                    <label for="id_first_name" class="form-label">Имя</label>
-                    {{ form.first_name }}
+                <div class="mb-3">
+                    <label for="id_bio" class="form-label">О себе</label>
+                    <textarea name="bio" class="form-control" id="id_bio">{{ profile_form.bio.value }}</textarea>
                 </div>
 
-                <div class="form-group mb-3">
-                    <label for="id_last_name" class="form-label">Фамилия</label>
-                    {{ form.last_name }}
+                <div class="mb-3">
+                    <label for="id_location" class="form-label">Локация</label>
+                    <input type="text" name="location" value="{{ profile_form.location.value }}" class="form-control" id="id_location">
                 </div>
 
                 <button type="submit" class="btn btn-primary">Сохранить изменения</button>
             </form>
+
+            {% if user_form.errors or profile_form.errors %}
+                <div class="alert alert-danger mt-3">
+                    <ul>
+                        {% for field in user_form %}
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for field in profile_form %}
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>

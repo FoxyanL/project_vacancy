@@ -10,7 +10,9 @@
             <div class="card-body">
                 <h5 class="card-title">Добро пожаловать, {{ user.username }}!</h5>
                 <p class="card-text">Email: {{ user.email }}</p>
-                
+                <p class="card-text">О себе: {{ user.profile.bio }}</p>
+                <p class="card-text">Локация: {{ user.profile.location }}</p>
+
                 <hr>
                 <div class="d-flex justify-content-between">
                     <a href="{% url 'edit_profile' %}" class="btn btn-warning">Изменить профиль</a>
