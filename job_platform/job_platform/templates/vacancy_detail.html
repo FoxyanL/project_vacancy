@@ -99,11 +99,15 @@
                     <a href="{% url 'leave_review' vacancy.id %}" class="btn btn-warning">Оставить отзыв</a>
                 </div>
             {% else %}
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label for="message" class="form-label">Сообщение</label>
-                        <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                        <label for="message" class="form-label">Сопроводительное письмо</label>
+                        {{ form.message }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="resume" class="form-label">Загрузите резюме</label>
+                        {{ form.resume }}
                     </div>
                     <button type="submit" class="btn btn-primary">Подать заявку</button>
                 </form>

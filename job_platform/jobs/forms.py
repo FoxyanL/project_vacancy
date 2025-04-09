@@ -5,7 +5,10 @@ from jobs.models import Review, Rating, Vacancy, ReviewEmployer
 class ApplicationForm(forms.ModelForm):
     class Meta:
         model = Application
-        fields = ['message']
+        fields = ['message', 'resume']
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 4}),
+        }
 
 class ReviewForm(forms.ModelForm):
     class Meta:

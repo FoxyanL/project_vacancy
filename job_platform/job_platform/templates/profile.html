@@ -22,5 +22,32 @@
                 </div>
             </div>
         </div>
+
+        <hr class="my-5">
+
+        <h3 class="text-center mb-4">Календарь собеседований</h3>
+
+        {% if interviews %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Вакансия</th>
+                        <th>Дата собеседования</th>
+                        <th>Детали</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for interview in interviews %}
+                        <tr>
+                            <td>{{ interview.vacancy_title }}</td>
+                            <td>{{ interview.interview_date|date:"d.m.Y" }}</td>
+                            <td><a href="{% url 'vacancy_detail' interview.vacancy_id %}" class="btn btn-secondary btn-sm">Подробнее</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-center text-muted">У вас нет назначенных собеседований.</p>
+        {% endif %}
     </div>
 {% endblock %}

@@ -63,6 +63,17 @@
         color: #ffffff;
     }
 
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: #ffffff;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+
     .border {
         border: 1px solid #e0e0e0;
     }
@@ -97,61 +108,56 @@
                 <h5 class="card-title">{{ application.student.username }}</h5>
                 <p class="card-text"><strong>Сообщение:</strong> {{ application.message }}</p>
                 <p class="card-text"><strong>Дата подачи:</strong> {{ application.date_submitted|date:"d.m.Y H:i" }}</p>
+                <p><strong>Статус заявки:</strong> {{ application.status }}</p>
 
-                <h6 class="mt-3">Отзывы:</h6>
-                {% for review in reviews %}
-                    {% if review.student == application.student %}
-                        <div class="border p-3 mb-3">
-                            <strong>Оценка:</strong> {{ review.rating }} <br>
-                            <strong>Комментарий:</strong> {{ review.comment }} <br>
-                            <small class="text-muted">Оставлено: {{ review.created_at|date:"d.m.Y" }}</small>
-                        </div>
-                    {% endif %}
-                {% empty %}
-                    <p>Еще нет отзывов для этого студента.</p>
-                {% endfor %}
-                {% if reviews %}
-                    {% for review in reviews %}
-                        {% if not review.student == application.student %}
-                            <form method="post" class="mt-3">
-                                {% csrf_token %}
-                                <input type="hidden" name="student_id" value="{{ application.student.id }}">
-
-                                <div class="mb-2">
-                                    <label for="rating_{{ application.student.id }}" class="form-label">Оценка (1-5):</label>
-                                    <input type="number" name="rating" min="1" max="5" class="form-control" id="rating_{{ application.student.id }}" required>
-                                </div>
-
-                                <div class="mb-2">
-                                    <label for="comment_{{ application.student.id }}" class="form-label">Комментарий:</label>
-                                    <textarea name="comment" class="form-control" id="comment_{{ application.student.id }}" rows="2" required></textarea>
-                                </div>
-
-                                <button type="submit" class="btn btn-success">Оставить отзыв</button>
-                            </form>
-                        {% else %}
-                            <p class="text-muted">Вы уже оставили отзыв для этого студента.</p>
-                        {% endif %}
-                    {% endfor %}
-                {% else %}
-                    <form method="post" class="mt-3">
+                {% if application.status == "Ожидает рассмотрения" %}
+                    <form method="post" class="d-flex gap-2">
                         {% csrf_token %}
                         <input type="hidden" name="student_id" value="{{ application.student.id }}">
-
-                        <div class="mb-2">
-                            <label for="rating_{{ application.student.id }}" class="form-label">Оценка (1-5):</label>
-                            <input type="number" name="rating" min="1" max="5" class="form-control" id="rating_{{ application.student.id }}" required>
-                        </div>
-
-                        <div class="mb-2">
-                            <label for="comment_{{ application.student.id }}" class="form-label">Комментарий:</label>
-                            <textarea name="comment" class="form-control" id="comment_{{ application.student.id }}" rows="2" required></textarea>
-                        </div>
-
-                        <button type="submit" class="btn btn-success">Оставить отзыв</button>
+                        <button type="submit" name="action" value="accept" class="btn btn-success">Принять</button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger">Отклонить</button>
                     </form>
                 {% endif %}
 
+                {% if application.status == "Принята" %}
+                    <h6 class="mt-3">Отзывы:</h6>
+                    {% with found=False %}
+                        {% for review in reviews %}
+                            {% if review.student == application.student %}
+                                {% with found=True %}
+                                    <div class="border p-3 mb-3">
+                                        <strong>Оценка:</strong> {{ review.rating }} <br>
+                                        <strong>Комментарий:</strong> {{ review.comment }} <br>
+                                        <small class="text-muted">Оставлено: {{ review.created_at|date:"d.m.Y" }}</small>
+                                    </div>
+                                {% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if not found %}
+                            <p>Еще нет отзывов для этого студента.</p>
+                        {% endif %}
+                    {% endwith %}
+
+                    {% if student_reviews.0.id %}
+                        <p class="text-muted">Вы уже оставили отзыв для этого студента.</p>
+                    {% else %}
+                        <form method="post" class="mt-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="student_id" value="{{ application.student.id }}">
+                            <div class="mb-2">
+                                <label for="rating_{{ application.student.id }}" class="form-label">Оценка (1-5):</label>
+                                <input type="number" name="rating" min="1" max="5" class="form-control" id="rating_{{ application.student.id }}" required>
+                            </div>
+                            <div class="mb-2">
+                                <label for="comment_{{ application.student.id }}" class="form-label">Комментарий:</label>
+                                <textarea name="comment" class="form-control" id="comment_{{ application.student.id }}" rows="2" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success">Оставить отзыв</button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted">Оставить отзыв можно только после принятия студента.</p>
+                {% endif %}
             </div>
         </div>
     {% empty %}

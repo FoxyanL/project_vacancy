@@ -1,0 +1,20 @@
+{% extends 'base_generic.html' %}
+
+{% block title %}Уведомления{% endblock %}
+
+{% block content %}
+    <h2>Ваши уведомления</h2>
+    
+    {% if notifications %}
+        <ul class="list-group">
+            {% for notification in notifications %}
+                <li class="list-group-item {% if not notification.read %}list-group-item-warning{% endif %}">
+                    <p>{{ notification.message }}</p>
+                    <small class="text-muted">Получено: {{ notification.created_at|date:"d.m.Y H:i" }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>У вас нет уведомлений.</p>
+    {% endif %}
+{% endblock %}

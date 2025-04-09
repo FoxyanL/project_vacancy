@@ -23,54 +23,50 @@ from rest_framework.permissions import AllowAny
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from .serializers import ProfileUpdateSerializer, UserUpdateSerializer
+from .serializers import *
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from jobs.models import Review, Vacancy, Rating, ReviewEmployer
 from jobs.forms import ReviewForm, ReviewEmployerForm
 from jobs.forms import VacancyForm
-from users.models import Profile
-
-
-class VacancyList(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        vacancies = Vacancy.objects.all()
-        serializer = VacancySerializer(vacancies, many=True)
-        return Response(serializer.data)
-
-class ApplicationList(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        applications = Application.objects.filter(student=request.user)
-        serializer = ApplicationSerializer(applications, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = ApplicationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(student=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+from users.models import Profile, Notification
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from applications.serializers import ApplicationSerializer
+from rest_framework.decorators import action
 
 User = get_user_model()
 
 @login_required
 def profile(request):
-    return render(request, 'profile.html')
+    interviews = Application.objects.filter(student=request.user, status='Принята')
+    interview_data = []
+
+    for interview in interviews:
+        interview_data.append({
+            'vacancy_title': interview.vacancy.title,
+            'interview_date': interview.vacancy.deadline,
+            'vacancy_id': interview.vacancy.id,
+        })
+
+    return render(request, 'profile.html', {
+        'interviews': interview_data,
+    })
 
 def home(request):
     if isinstance(request.user, AnonymousUser):
         message = "Пожалуйста, авторизуйтесь, чтобы просматривать вакансии."
         return render(request, 'index.html', {'message': message})
 
+    unread_notifications_count = 0
+    if request.user.is_authenticated:
+        unread_notifications_count = Notification.objects.filter(user=request.user, read=False).count()
+
     search_query = request.GET.get('search', '')
     sort_option = request.GET.get('sort', '')
 
-    vacancies = Vacancy.objects.filter(currency='RUB')
+    vacancies = Vacancy.objects.all()
 
     if search_query:
         vacancies = vacancies.filter(
@@ -79,12 +75,16 @@ def home(request):
 
     if sort_option == 'salary_min':
         vacancies = vacancies.order_by('salary_min')
+    
+    if request.user.profile.role:
+        role = request.user.profile.role
 
     return render(request, 'index.html', {
         'vacancies': vacancies,
         'search': search_query,
         'sort': sort_option,
-        'role': request.user.profile.role
+        'role': role,
+        'unread_notifications_count': unread_notifications_count,
     })
 
 def user_login(request):
@@ -159,16 +159,22 @@ def user_logout(request):
 @login_required
 def vacancy_detail(request, vacancy_id):
     vacancy = get_object_or_404(Vacancy, id=vacancy_id)
-    
     is_applied = Application.objects.filter(student=request.user, vacancy=vacancy).exists()
 
     if request.method == 'POST' and not is_applied:
-        form = ApplicationForm(request.POST)
+        form = ApplicationForm(request.POST, request.FILES)
         if form.is_valid():
             application = form.save(commit=False)
             application.student = request.user
             application.vacancy = vacancy
             application.save()
+
+            employer = vacancy.employer
+            Notification.objects.create(
+                user=employer,
+                message=f"Студент {request.user.username} подал заявку на вакансию '{vacancy.title}'."
+            )
+
             return redirect('applications')
     else:
         form = ApplicationForm()
@@ -188,22 +194,6 @@ def applications(request):
 
     return render(request, 'applications.html', {'applications': applications})
 
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-def update_profile(request):
-    user_serializer = UserUpdateSerializer(instance=request.user, data=request.data)
-    profile_serializer = ProfileUpdateSerializer(instance=request.user.profile, data=request.data)
-
-    user_serializer.is_valid(raise_exception=True)
-    profile_serializer.is_valid(raise_exception=True)
-
-    user_serializer.save()
-    profile_serializer.save()
-
-    return Response({
-        'user': user_serializer.data,
-        'profile': profile_serializer.data
-    })
 
 @login_required
 def leave_review(request, vacancy_id):
@@ -266,6 +256,12 @@ def create_vacancy(request):
             vacancy = form.save(commit=False)
             vacancy.employer = request.user
             vacancy.save()
+            users = get_user_model().objects.filter(profile__role='student')
+            for user in users:
+                Notification.objects.create(
+                    user=user,
+                    message=f"Новая вакансия: {vacancy.title} добавлена на платформу.",
+                )
             return redirect('my_vacancies')
     else:
         form = VacancyForm()
@@ -284,34 +280,216 @@ def my_vacancies(request):
 def vacancy_applicants_view(request, vacancy_id):
     vacancy = get_object_or_404(Vacancy, id=vacancy_id, employer=request.user)
     applications = Application.objects.filter(vacancy=vacancy)
-
     reviews = ReviewEmployer.objects.filter(vacancy=vacancy)
 
-    review_status = False
+    student_reviews = {review.student.id: review for review in reviews}
 
     if request.method == 'POST':
         student_id = request.POST.get('student_id')
-        rating = request.POST.get('rating')
-        comment = request.POST.get('comment')
-
         student = get_user_model().objects.get(id=student_id)
 
+        if 'action' in request.POST:
+            action = request.POST.get('action')
+            application = get_object_or_404(Application, vacancy=vacancy, student=student)
 
-        ReviewEmployer.objects.create(
-            student=student,
-            employer=request.user,
-            vacancy=vacancy,
-            rating=rating,
-            comment=comment
-        )
-        messages.success(request, "Ваш отзыв был успешно добавлен.")
-        review_status = True
+            if action == 'accept':
+                application.status = 'Принята'
+                application.save()
 
-        return redirect('vacancy_applicants', vacancy_id=vacancy_id)
+                Notification.objects.create(
+                    user=student,
+                    message=f"Ваша заявка на вакансию «{vacancy.title}» была принята."
+                )
+
+                messages.success(request, f"Вы приняли студента {student.username}.")
+            elif action == 'reject':
+                application.status = 'Отклонена'
+                application.save()
+
+                Notification.objects.create(
+                    user=student,
+                    message=f"Ваша заявка на вакансию «{vacancy.title}» была отклонена."
+                )
+
+                messages.warning(request, f"Вы отклонили студента {student.username}.")
+            
+            return redirect('vacancy_applicants', vacancy_id=vacancy_id)
+
+        elif 'rating' in request.POST and 'comment' in request.POST:
+            rating = request.POST.get('rating')
+            comment = request.POST.get('comment')
+
+            existing_review = ReviewEmployer.objects.filter(
+                student=student,
+                employer=request.user,
+                vacancy=vacancy
+            ).first()
+
+            if existing_review:
+                messages.warning(request, "Вы уже оставили отзыв для этого студента.")
+            else:
+                ReviewEmployer.objects.create(
+                    student=student,
+                    employer=request.user,
+                    vacancy=vacancy,
+                    rating=rating,
+                    comment=comment
+                )
+                messages.success(request, "Ваш отзыв был успешно добавлен.")
+
+            return redirect('vacancy_applicants', vacancy_id=vacancy_id)
 
     return render(request, 'vacancy_applicants.html', {
         'vacancy': vacancy,
         'applications': applications,
         'reviews': reviews,
-        'review_status': review_status,
+        'student_reviews': student_reviews,
     })
+
+@login_required
+def notifications_view(request):
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+
+    notifications.update(read=True)
+
+    return render(request, 'notifications.html', {
+        'notifications': notifications,
+    })
+
+
+class VacancyViewSet(viewsets.ModelViewSet):
+    queryset = Vacancy.objects.all()
+    serializer_class = VacancySerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            raise serializers.ValidationError(serializer.errors)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            return super().create(request, *args, **kwargs)
+        return Response(serializer.errors, status=400)
+
+class ApplicationList(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        applications = Application.objects.filter(student=request.user)
+        serializer = ApplicationSerializer(applications, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ApplicationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(student=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ProfileViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+    
+    def list(self, request):
+        profile = Profile.objects.get(user=request.user)
+        return Response(ProfileSerializer(profile).data)
+
+    @action(detail=False, methods=['put'])
+    def update_profile(self, request):
+        profile = Profile.objects.get(user=request.user)
+        serializer = ProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    @action(detail=False, methods=['get'])
+    def interviews(self, request):
+        applications = Application.objects.filter(student=request.user, status='Принята')
+        interview_data = []
+        for application in applications:
+            interview_data.append({
+                'vacancy_title': application.vacancy.title,
+                'interview_date': application.vacancy.deadline,
+                'vacancy_id': application.vacancy.id,
+            })
+        return Response(interview_data)
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if serializer.is_valid():
+            serializer.save(student=self.request.user)
+        else:
+            raise serializers.ValidationError(serializer.errors)
+
+class ReviewEmployerViewSet(viewsets.ModelViewSet):
+    queryset = ReviewEmployer.objects.all()
+    serializer_class = ReviewEmployerSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if serializer.is_valid():
+            serializer.save(employer=self.request.user)
+        else:
+            raise serializers.ValidationError(serializer.errors)
+
+class ApplicationViewSet(viewsets.ModelViewSet):
+    queryset = Application.objects.all()
+    serializer_class = ApplicationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if serializer.is_valid():
+            serializer.save(student=self.request.user)
+        else:
+            raise serializers.ValidationError(serializer.errors)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            return super().create(request, *args, **kwargs)
+        return Response(serializer.errors, status=400)
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+class ProfileViewSet(viewsets.ModelViewSet):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            raise serializers.ValidationError(serializer.errors)
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            return super().update(request, *args, **kwargs)
+        return Response(serializer.errors, status=400)
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+class RatingViewSet(viewsets.ModelViewSet):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            raise serializers.ValidationError(serializer.errors)

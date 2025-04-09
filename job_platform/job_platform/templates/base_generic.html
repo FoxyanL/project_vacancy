@@ -58,6 +58,16 @@
             padding: 20px 0;
             text-align: center;
         }
+        
+        .navbar-toggler {
+            background-color: white;
+            border: 1px solid white;
+        }
+
+        .navbar-toggler-icon {
+            background-color: white;
+            border-color: white;
+        }
     </style>
 
     {% block extra_css %}
@@ -88,6 +98,14 @@
                                 <a class="nav-link" href="{% url 'applications' %}">Мои заявки</a>
                             </li>
                         {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'notifications' %}">
+                                Уведомления 
+                                {% if unread_notifications_count > 0 %}
+                                    <span class="badge bg-danger">{{ unread_notifications_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'profile' %}">Личный кабинет</a>
                         </li>
