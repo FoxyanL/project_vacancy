@@ -1,15 +1,103 @@
 {% extends 'base_generic.html' %}
 
+
+{% block extra_css %}
+<style>
+    .container {
+        max-width: 800px;
+    }
+
+    .card {
+        background-color: #f8f9fa;
+        color: #333;
+    }
+
+    .card-body {
+        background-color: #ffffff;
+    }
+
+    .form-control {
+        background-color: #e9ecef;
+        border: 1px solid #ced4da;
+        color: #495057;
+    }
+
+    .form-control:focus {
+        border-color: #ced4da;
+        box-shadow: none;
+    }
+
+    .btn-outline-secondary {
+        border-color: #6c757d;
+        color: #495057;
+    }
+
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        color: white;
+        border-color: #5a6268;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .btn-primary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background-color: #5a6268;
+        border-color: #545b62;
+    }
+
+
+    .btn-success {
+        background-color: #6f9f6f;
+        border-color: #6f9f6f;
+    }
+
+    .btn-success:hover {
+        background-color: #4f7f4f;
+        border-color: #4f7f4f;
+    }
+
+    .btn-warning {
+        background-color: #f4a261;
+        border-color: #f4a261;
+    }
+
+    .btn-warning:hover {
+        background-color: #e07b3b;
+        border-color: #e07b3b;
+    }
+
+    .form-label {
+        color: black;
+    }
+</style>
+{% endblock %}
+
+
+
+
+
 {% block title %}Подать заявку на вакансию{% endblock %}
 
 {% block content %}
     {% if user.is_authenticated %}
         <div class="container mt-5">
-            <h2>Подать заявку на вакансию: {{ vacancy.title }}</h2>
+            <h2 class="mb-4">Подать заявку на вакансию: {{ vacancy.title }}</h2>
             <p>{{ vacancy.description }}</p>
 
             {% if is_applied %}
-                <a href="{% url 'applications' %}" class="btn btn-success">Заявка подана. Перейти в Мои заявки</a>
+                <div class="d-flex flex-column flex-md-row gap-2">
+                    <a href="{% url 'applications' %}" class="btn btn-success">Заявка подана. Перейти в Мои заявки</a>
+                    <a href="{% url 'leave_review' vacancy.id %}" class="btn btn-warning">Оставить отзыв</a>
+                </div>
             {% else %}
                 <form method="POST">
                     {% csrf_token %}

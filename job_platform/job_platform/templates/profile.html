@@ -3,20 +3,22 @@
 {% block title %}Личный кабинет{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h2 class="mb-4">Личный кабинет</h2>
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Личный кабинет</h2>
         
-        <div class="card">
+        <div class="card border-light shadow-sm">
             <div class="card-body">
-                <h5 class="card-title">Добро пожаловать, {{ user.username }}!</h5>
-                <p class="card-text">Email: {{ user.email }}</p>
-                <p class="card-text">О себе: {{ user.profile.bio }}</p>
-                <p class="card-text">Локация: {{ user.profile.location }}</p>
+                <h5 class="card-title text-dark">Добро пожаловать, {{ user.username }}!</h5>
+                <p class="card-text text-muted">Email: {{ user.email }}</p>
+                <p class="card-text text-muted">О себе: {{ user.profile.bio }}</p>
+                <p class="card-text text-muted">Локация: {{ user.profile.location }}</p>
+                <p class="card-text text-muted">Роль: {{ user.profile.role }}</p>
 
-                <hr>
+                <hr class="my-4">
+
                 <div class="d-flex justify-content-between">
-                    <a href="{% url 'edit_profile' %}" class="btn btn-warning">Изменить профиль</a>
-                    <a href="{% url 'logout' %}" class="btn btn-danger">Выйти</a>
+                    <a href="{% url 'edit_profile' %}" class="btn btn-outline-secondary px-4">Изменить профиль</a>
+                    <a href="{% url 'logout' %}" class="btn btn-outline-danger px-4">Выйти</a>
                 </div>
             </div>
         </div>

@@ -28,5 +28,10 @@ urlpatterns = [
     path('vacancy/<int:vacancy_id>/', views.vacancy_detail, name='vacancy_detail'),
     path('applications/', views.applications, name='applications'),
     path('profile/update/', views.update_profile, name='update_profile'),
+    path('vacancy/<int:vacancy_id>/leave_review/', views.leave_review, name='leave_review'),
+    path('vacancy/<int:vacancy_id>/rate_employer/', views.rate_employer, name='rate_employer'),
+    path('my_vacancies/', views.my_vacancies, name='my_vacancies'),
+    path('create_vacancy/', views.create_vacancy, name='create_vacancy'),
+    path('vacancy/<int:vacancy_id>/applicants/', views.vacancy_applicants_view, name='vacancy_applicants'),
 ]
 

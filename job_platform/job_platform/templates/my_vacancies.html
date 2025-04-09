@@ -1,0 +1,106 @@
+{% extends 'base_generic.html' %}
+
+{% block extra_css %}
+<style>
+    .container {
+        max-width: 900px;
+    }
+
+    .card {
+        background-color: #f8f9fa;
+        color: #333;
+    }
+
+    .card-body {
+        background-color: #ffffff;
+    }
+
+    .card-title {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .card-text {
+        color: #495057;
+    }
+
+    .card-text strong {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .btn-outline-primary {
+        color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #6c757d;
+        color: white;
+        border-color: #5a6268;
+    }
+
+    .btn {
+        font-weight: 600;
+        padding: 10px 15px;
+        border-radius: 4px;
+    }
+
+    .text-center {
+        color: #495057;
+    }
+
+    p a {
+        color: #6c757d;
+    }
+
+    p a:hover {
+        color: #495057;
+    }
+
+    .row {
+        margin-top: 20px;
+    }
+
+    .col-md-6 {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Мои вакансии</h2>
+
+    {% if vacancies %}
+        <div class="row">
+            {% for vacancy in vacancies %}
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ vacancy.title }}</h5>
+                            <p class="card-text"><strong>Описание:</strong> {{ vacancy.description|truncatewords:30 }}</p>
+                            <p class="card-text"><strong>Зарплата:</strong>
+                                {% if vacancy.salary_min and vacancy.salary_max %}
+                                    {{ vacancy.salary_min }} – {{ vacancy.salary_max }} {{ vacancy.currency }}
+                                {% elif vacancy.salary_min %}
+                                    от {{ vacancy.salary_min }} {{ vacancy.currency }}
+                                {% elif vacancy.salary_max %}
+                                    до {{ vacancy.salary_max }} {{ vacancy.currency }}
+                                {% else %}
+                                    не указана
+                                {% endif %}
+                            </p>
+                            <p class="card-text"><strong>Город:</strong> {{ vacancy.city }}</p>
+                            <p class="card-text"><strong>Дедлайн:</strong> {{ vacancy.deadline|date:"d.m.Y" }}</p>
+                            <a href="{% url 'vacancy_applicants' vacancy.id %}" class="btn btn-outline-primary mt-2">Подробнее</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center">У вас пока нет созданных вакансий.</p>
+    {% endif %}
+</div>
+{% endblock %}

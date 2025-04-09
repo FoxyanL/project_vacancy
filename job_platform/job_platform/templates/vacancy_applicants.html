@@ -1,0 +1,161 @@
+{% extends "base_generic.html" %}
+
+{% block extra_css %}
+<style>
+    .container {
+        max-width: 900px;
+    }
+
+    .card {
+        background-color: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        color: #333;
+    }
+
+    .card-body {
+        background-color: #ffffff;
+    }
+
+    .card-title {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .card-text {
+        color: #6c757d;
+    }
+
+    .form-label {
+        color: #495057;
+        font-weight: 600;
+    }
+
+    .form-control {
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+        background-color: #ffffff;
+        color: #495057;
+    }
+
+    .form-control:focus {
+        border-color: #495057;
+        box-shadow: none;
+    }
+
+    .btn-success {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: #ffffff;
+    }
+
+    .btn-success:hover {
+        background-color: #5a6268;
+        border-color: #4e555b;
+    }
+
+    .btn-outline-success {
+        border-color: #28a745;
+        color: #28a745;
+    }
+
+    .btn-outline-success:hover {
+        background-color: #28a745;
+        color: #ffffff;
+    }
+
+    .border {
+        border: 1px solid #e0e0e0;
+    }
+
+    .text-muted {
+        color: #6c757d;
+    }
+
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
+
+    .mt-3 {
+        margin-top: 1rem;
+    }
+
+    .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Откликнувшиеся на вакансию: {{ vacancy.title }}</h2>
+
+    {% for application in applications %}
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">{{ application.student.username }}</h5>
+                <p class="card-text"><strong>Сообщение:</strong> {{ application.message }}</p>
+                <p class="card-text"><strong>Дата подачи:</strong> {{ application.date_submitted|date:"d.m.Y H:i" }}</p>
+
+                <h6 class="mt-3">Отзывы:</h6>
+                {% for review in reviews %}
+                    {% if review.student == application.student %}
+                        <div class="border p-3 mb-3">
+                            <strong>Оценка:</strong> {{ review.rating }} <br>
+                            <strong>Комментарий:</strong> {{ review.comment }} <br>
+                            <small class="text-muted">Оставлено: {{ review.created_at|date:"d.m.Y" }}</small>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <p>Еще нет отзывов для этого студента.</p>
+                {% endfor %}
+                {% if reviews %}
+                    {% for review in reviews %}
+                        {% if not review.student == application.student %}
+                            <form method="post" class="mt-3">
+                                {% csrf_token %}
+                                <input type="hidden" name="student_id" value="{{ application.student.id }}">
+
+                                <div class="mb-2">
+                                    <label for="rating_{{ application.student.id }}" class="form-label">Оценка (1-5):</label>
+                                    <input type="number" name="rating" min="1" max="5" class="form-control" id="rating_{{ application.student.id }}" required>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="comment_{{ application.student.id }}" class="form-label">Комментарий:</label>
+                                    <textarea name="comment" class="form-control" id="comment_{{ application.student.id }}" rows="2" required></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-success">Оставить отзыв</button>
+                            </form>
+                        {% else %}
+                            <p class="text-muted">Вы уже оставили отзыв для этого студента.</p>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <form method="post" class="mt-3">
+                        {% csrf_token %}
+                        <input type="hidden" name="student_id" value="{{ application.student.id }}">
+
+                        <div class="mb-2">
+                            <label for="rating_{{ application.student.id }}" class="form-label">Оценка (1-5):</label>
+                            <input type="number" name="rating" min="1" max="5" class="form-control" id="rating_{{ application.student.id }}" required>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="comment_{{ application.student.id }}" class="form-label">Комментарий:</label>
+                            <textarea name="comment" class="form-control" id="comment_{{ application.student.id }}" rows="2" required></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">Оставить отзыв</button>
+                    </form>
+                {% endif %}
+
+            </div>
+        </div>
+    {% empty %}
+        <p>На эту вакансию пока никто не откликнулся.</p>
+    {% endfor %}
+</div>
+{% endblock %}

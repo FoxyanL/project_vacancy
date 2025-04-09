@@ -1,0 +1,42 @@
+{% extends 'base_generic.html' %}
+
+{% block title %}Оставить отзыв{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Оставить отзыв на вакансию: {{ vacancy.title }}</h2>
+    <p>Работодатель: {{ vacancy.employer.username }}</p>
+
+    <h3>Отзывы о работодателе:</h3>
+    {% if reviews %}
+        <ul class="list-group mb-4">
+            {% for review in reviews %}
+                <li class="list-group-item">
+                    <strong>{{ review.student.username }}:</strong> {{ review.comment }} <br>
+                    <strong>Оценка:</strong> {{ review.rating }} <br>
+                    <small class="text-muted">Оставлено: {{ review.created_at|date:"d.m.Y H:i" }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Пока нет отзывов для этого работодателя.</p>
+    {% endif %}
+
+    {% if existing_review %}
+        <p class="text-muted">Вы уже оставили отзыв для этого работодателя.</p>
+    {% else %}
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                {{ form.rating.label_tag }}
+                {{ form.rating }}
+            </div>
+            <div class="mb-3">
+                {{ form.comment.label_tag }}
+                {{ form.comment }}
+            </div>
+            <button type="submit" class="btn btn-primary">Отправить отзыв</button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

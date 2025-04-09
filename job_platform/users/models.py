@@ -26,9 +26,15 @@ class User(AbstractUser):
         return self.username
 
 class Profile(models.Model):
+    ROLE_CHOICES = [
+        ('student', 'Студент'),
+        ('employer', 'Работодатель'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(blank=True)
     location = models.CharField(max_length=100, blank=True)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
 
     def __str__(self):
         return f"{self.user.username}'s profile"

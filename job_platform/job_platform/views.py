@@ -25,6 +25,11 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from .serializers import ProfileUpdateSerializer, UserUpdateSerializer
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q
+from jobs.models import Review, Vacancy, Rating, ReviewEmployer
+from jobs.forms import ReviewForm, ReviewEmployerForm
+from jobs.forms import VacancyForm
+from users.models import Profile
 
 
 class VacancyList(APIView):
@@ -61,9 +66,26 @@ def home(request):
     if isinstance(request.user, AnonymousUser):
         message = "Пожалуйста, авторизуйтесь, чтобы просматривать вакансии."
         return render(request, 'index.html', {'message': message})
-    
-    vacancies = Vacancy.objects.all()
-    return render(request, 'index.html', {'vacancies': vacancies})
+
+    search_query = request.GET.get('search', '')
+    sort_option = request.GET.get('sort', '')
+
+    vacancies = Vacancy.objects.filter(currency='RUB')
+
+    if search_query:
+        vacancies = vacancies.filter(
+            Q(title__icontains=search_query) | Q(description__icontains=search_query)
+        )
+
+    if sort_option == 'salary_min':
+        vacancies = vacancies.order_by('salary_min')
+
+    return render(request, 'index.html', {
+        'vacancies': vacancies,
+        'search': search_query,
+        'sort': sort_option,
+        'role': request.user.profile.role
+    })
 
 def user_login(request):
     if request.method == "POST":
@@ -85,6 +107,7 @@ def user_register(request):
         email = request.POST.get("email")
         password1 = request.POST.get("password1")
         password2 = request.POST.get("password2")
+        role = request.POST.get("role")
 
         if password1 != password2:
             messages.error(request, "Пароли не совпадают!")
@@ -99,7 +122,8 @@ def user_register(request):
             return redirect("register")
 
         user = User.objects.create_user(username=username, email=email, password=password1)
-        user.save()
+        Profile.objects.create(user=user, role=role)
+
         messages.success(request, "Регистрация успешна! Теперь войдите в систему.")
         return redirect("login")
 
@@ -108,23 +132,25 @@ def user_register(request):
 @login_required
 def edit_profile(request):
     user_form = ProfileUpdateForm(request.POST or None, instance=request.user)
+    
     try:
         profile = request.user.profile
     except Profile.DoesNotExist:
         profile = Profile.objects.create(user=request.user)
+    
+    profile_form = ProfileForm(request.POST or None, instance=profile)
 
     if request.method == 'POST':
         if user_form.is_valid():
             user_form.save()
-            profile_form = ProfileForm(request.POST, instance=profile)
+            
             if profile_form.is_valid():
                 profile_form.save()
                 return redirect('profile')
-    else:
-        profile_form = ProfileForm(instance=profile)
+        else:
+            messages.error(request, 'Пожалуйста, исправьте ошибки в форме.')
 
     return render(request, 'edit_profile.html', {'user_form': user_form, 'profile_form': profile_form})
-
 
 def user_logout(request):
     logout(request)
@@ -132,7 +158,7 @@ def user_logout(request):
 
 @login_required
 def vacancy_detail(request, vacancy_id):
-    vacancy = Vacancy.objects.get(id=vacancy_id)
+    vacancy = get_object_or_404(Vacancy, id=vacancy_id)
     
     is_applied = Application.objects.filter(student=request.user, vacancy=vacancy).exists()
 
@@ -179,4 +205,113 @@ def update_profile(request):
         'profile': profile_serializer.data
     })
 
+@login_required
+def leave_review(request, vacancy_id):
+    vacancy = get_object_or_404(Vacancy, id=vacancy_id)
+    has_applied = Application.objects.filter(student=request.user, vacancy=vacancy).exists()
 
+    if not has_applied:
+        return render(request, 'error.html', {'message': 'Вы не можете оставить отзыв, если не подавали заявку.'})
+
+    reviews = Review.objects.filter(vacancy=vacancy)
+
+    existing_review = Review.objects.filter(student=request.user, employer=vacancy.employer, vacancy=vacancy).first()
+
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.student = request.user
+            review.employer = vacancy.employer
+            review.vacancy = vacancy
+            review.save()
+            return redirect('applications')
+    else:
+        form = ReviewForm()
+
+    return render(request, 'leave_review.html', {
+        'vacancy': vacancy,
+        'form': form,
+        'reviews': reviews,
+        'existing_review': existing_review,
+    })
+
+@login_required
+def rate_employer(request, vacancy_id):
+    vacancy = Vacancy.objects.get(id=vacancy_id)
+    if request.user != vacancy.student:
+        return redirect('home')
+
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        if rating:
+            Rating.objects.create(
+                student=request.user,
+                job=vacancy,
+                employer=vacancy.employer,
+                rating=int(rating)
+            )
+            return redirect('vacancy_detail', vacancy_id=vacancy.id)
+    
+    return render(request, 'rate_employer.html', {'vacancy': vacancy})
+
+@login_required
+def create_vacancy(request):
+    if not request.user.is_authenticated or request.user.profile.role != 'employer':
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = VacancyForm(request.POST)
+        if form.is_valid():
+            vacancy = form.save(commit=False)
+            vacancy.employer = request.user
+            vacancy.save()
+            return redirect('my_vacancies')
+    else:
+        form = VacancyForm()
+    
+    return render(request, 'create_vacancy.html', {'form': form})
+
+def my_vacancies(request):
+    if not request.user.is_authenticated or request.user.profile.role != 'employer':
+        return redirect('home')
+    
+    vacancies = Vacancy.objects.filter(employer=request.user)
+    return render(request, 'my_vacancies.html', {'vacancies': vacancies})
+
+
+@login_required
+def vacancy_applicants_view(request, vacancy_id):
+    vacancy = get_object_or_404(Vacancy, id=vacancy_id, employer=request.user)
+    applications = Application.objects.filter(vacancy=vacancy)
+
+    reviews = ReviewEmployer.objects.filter(vacancy=vacancy)
+
+    review_status = False
+
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment')
+
+        student = get_user_model().objects.get(id=student_id)
+
+
+        ReviewEmployer.objects.create(
+            student=student,
+            employer=request.user,
+            vacancy=vacancy,
+            rating=rating,
+            comment=comment
+        )
+        messages.success(request, "Ваш отзыв был успешно добавлен.")
+        review_status = True
+
+        return redirect('vacancy_applicants', vacancy_id=vacancy_id)
+
+    return render(request, 'vacancy_applicants.html', {
+        'vacancy': vacancy,
+        'applications': applications,
+        'reviews': reviews,
+        'review_status': review_status,
+    })
