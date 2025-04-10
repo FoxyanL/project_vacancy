@@ -35,6 +35,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from applications.serializers import ApplicationSerializer
 from rest_framework.decorators import action
+from applications.models import InterviewCalendar, CoverLetter
+from applications.serializers import InterviewCalendarSerializer, CoverLetterSerializer
 
 User = get_user_model()
 
@@ -493,3 +495,26 @@ class RatingViewSet(viewsets.ModelViewSet):
             serializer.save()
         else:
             raise serializers.ValidationError(serializer.errors)
+
+class InterviewCalendarViewSet(viewsets.ModelViewSet):
+    queryset = InterviewCalendar.objects.all()
+    serializer_class = InterviewCalendarSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class CoverLetterViewSet(viewsets.ModelViewSet):
+    queryset = CoverLetter.objects.all()
+    serializer_class = CoverLetterSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

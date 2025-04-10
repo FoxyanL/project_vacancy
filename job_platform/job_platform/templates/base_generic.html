@@ -51,14 +51,13 @@
             border: 1px solid #555;
         }
 
-
         .footer {
             background-color: #222;
             color: #aaa;
             padding: 20px 0;
             text-align: center;
         }
-        
+
         .navbar-toggler {
             background-color: white;
             border: 1px solid white;
@@ -68,6 +67,28 @@
             background-color: white;
             border-color: white;
         }
+
+        @media (max-width: 576px) {
+            .modal-dialog {
+                margin: 1rem auto;
+                max-width: 95%;
+            }
+
+            .navbar-nav .nav-link,
+            .btn {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+
+            .navbar-brand {
+                font-size: 18px;
+            }
+
+            .btn-primary {
+                width: 100%;
+                margin-top: 10px;
+            }
+        }
     </style>
 
     {% block extra_css %}
@@ -75,9 +96,10 @@
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light">
-        <div class="container">
+        <div class="container-fluid px-3">
             <a class="navbar-brand" href="{% url 'home' %}">project_vacancy</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Переключить навигацию">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Переключить навигацию">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -100,7 +122,7 @@
                         {% endif %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'notifications' %}">
-                                Уведомления 
+                                Уведомления
                                 {% if unread_notifications_count > 0 %}
                                     <span class="badge bg-danger">{{ unread_notifications_count }}</span>
                                 {% endif %}

@@ -51,3 +51,4 @@ class Rating(models.Model):
 
     def __str__(self):
         return f'Rating from {self.student} about {self.employer} and {self.job}'
+

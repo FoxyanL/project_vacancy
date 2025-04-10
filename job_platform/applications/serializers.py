@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Application
+from .models import *
 
 class ApplicationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,3 +26,14 @@ class ApplicationSerializer(serializers.ModelSerializer):
         if data['vacancy'].employer == data['student']:
             raise serializers.ValidationError("Студент не может подать заявку на свою собственную вакансию.")
         return data
+
+class InterviewCalendarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InterviewCalendar
+        fields = '__all__'
+
+
+class CoverLetterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CoverLetter
+        fields = '__all__'

@@ -18,10 +18,11 @@ from .views import (
     NotificationViewSet,
     ApplicationViewSet,
     UserViewSet,
-    RatingViewSet
+    RatingViewSet,
+    InterviewCalendarViewSet,
+    CoverLetterViewSet
 )
 
-# Инициализация роутера
 router = DefaultRouter()
 router.register(r'applications', ApplicationViewSet)
 router.register(r'users', UserViewSet)
@@ -31,6 +32,8 @@ router.register(r'vacancies', VacancyViewSet)
 router.register(r'reviews', ReviewViewSet)
 router.register(r'review-employers', ReviewEmployerViewSet)
 router.register(r'ratings', RatingViewSet)
+router.register(r'interviews', InterviewCalendarViewSet, basename='interviewcalendar')
+router.register(r'coverletters', CoverLetterViewSet, basename='coverletter')
 
 urlpatterns = [
     path("", home, name="home"),

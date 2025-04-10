@@ -1,19 +1,17 @@
 {% extends 'base_generic.html' %}
 
-
 {% block extra_css %}
 <style>
-    .container {
-        max-width: 800px;
-    }
-
     .card {
         background-color: #f8f9fa;
         color: #333;
+        border-radius: 12px;
     }
 
     .card-body {
         background-color: #ffffff;
+        border-radius: 12px;
+        padding: 30px;
     }
 
     .form-control {
@@ -27,26 +25,16 @@
         box-shadow: none;
     }
 
-    .btn-outline-secondary {
-        border-color: #6c757d;
-        color: #495057;
-    }
-
-    .btn-outline-secondary:hover {
-        background-color: #6c757d;
-        color: white;
-        border-color: #5a6268;
-    }
-
-    .alert-danger {
-        background-color: #f8d7da;
-        color: #721c24;
+    .form-label {
+        color: #6c757d;
+        font-weight: 500;
     }
 
     .btn-primary {
         background-color: #6c757d;
         border-color: #6c757d;
         color: #fff;
+        font-weight: 600;
     }
 
     .btn-primary:hover {
@@ -54,20 +42,15 @@
         border-color: #545b62;
     }
 
-
-    .btn-success {
-        background-color: #6f9f6f;
-        border-color: #6f9f6f;
-    }
-
-    .btn-success:hover {
-        background-color: #4f7f4f;
-        border-color: #4f7f4f;
+    .btn-success,
+    .btn-warning {
+        width: 100%;
     }
 
     .btn-warning {
         background-color: #f4a261;
         border-color: #f4a261;
+        color: #fff;
     }
 
     .btn-warning:hover {
@@ -75,48 +58,71 @@
         border-color: #e07b3b;
     }
 
-    .form-label {
-        color: black;
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 6px;
+    }
+
+    @media (max-width: 576px) {
+        .btn {
+            width: 100%;
+        }
     }
 </style>
 {% endblock %}
 
-
-
-
-
 {% block title %}Подать заявку на вакансию{% endblock %}
 
 {% block content %}
-    {% if user.is_authenticated %}
-        <div class="container mt-5">
-            <h2 class="mb-4">Подать заявку на вакансию: {{ vacancy.title }}</h2>
-            <p>{{ vacancy.description }}</p>
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Подать заявку на вакансию</h2>
 
-            {% if is_applied %}
-                <div class="d-flex flex-column flex-md-row gap-2">
-                    <a href="{% url 'applications' %}" class="btn btn-success">Заявка подана. Перейти в Мои заявки</a>
-                    <a href="{% url 'leave_review' vacancy.id %}" class="btn btn-warning">Оставить отзыв</a>
-                </div>
+    <div class="card border-light shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Вакансия: <strong>{{ vacancy.title }}</strong></h5>
+            <p class="mb-4">{{ vacancy.description }}</p>
+
+            {% if user.is_authenticated %}
+                {% if is_applied %}
+                    <div class="d-flex flex-column flex-md-row gap-3">
+                        <a href="{% url 'applications' %}" class="btn btn-success">Заявка подана. Перейти в Мои заявки</a>
+                        <a href="{% url 'leave_review' vacancy.id %}" class="btn btn-warning">Оставить отзыв</a>
+                    </div>
+                {% else %}
+                    <form method="POST" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="id_message" class="form-label">Сопроводительное письмо</label>
+                            <textarea name="message" id="id_message" class="form-control">{{ form.message.value }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_resume" class="form-label">Загрузите резюме</label>
+                            <input type="file" name="resume" id="id_resume" class="form-control">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Подать заявку</button>
+                    </form>
+
+                    {% if form.errors %}
+                        <div class="alert alert-danger mt-4">
+                            <ul class="mb-0">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                {% endif %}
             {% else %}
-                <form method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="message" class="form-label">Сопроводительное письмо</label>
-                        {{ form.message }}
-                    </div>
-                    <div class="mb-3">
-                        <label for="resume" class="form-label">Загрузите резюме</label>
-                        {{ form.resume }}
-                    </div>
-                    <button type="submit" class="btn btn-primary">Подать заявку</button>
-                </form>
+                <p>Пожалуйста, <a href="{% url 'login' %}">войдите</a>, чтобы подать заявку на вакансию.</p>
             {% endif %}
         </div>
-    {% else %}
-        <div class="container mt-5">
-            <h3>Для подачи заявки необходимо авторизоваться.</h3>
-            <p>Пожалуйста, <a href="{% url 'login' %}">войдите</a>, чтобы подать заявку на вакансию.</p>
-        </div>
-    {% endif %}
+    </div>
+</div>
 {% endblock %}
