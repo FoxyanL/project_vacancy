@@ -8,7 +8,7 @@ class Application(models.Model):
     student = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     vacancy = models.ForeignKey(Vacancy, on_delete=models.CASCADE)
     status = models.CharField(max_length=50, default="Ожидает рассмотрения")
-    message = models.TextField()
+    message = models.TextField(null=True, blank=True, default='')
     resume = models.FileField(upload_to='resumes/', null=True, blank=True)
     date_submitted = models.DateTimeField(auto_now_add=True)
 

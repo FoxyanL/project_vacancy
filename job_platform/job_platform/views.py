@@ -37,6 +37,9 @@ from applications.serializers import ApplicationSerializer
 from rest_framework.decorators import action
 from applications.models import InterviewCalendar, CoverLetter
 from applications.serializers import InterviewCalendarSerializer, CoverLetterSerializer
+from django.contrib.auth import login
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 
 User = get_user_model()
 
@@ -111,6 +114,16 @@ def user_register(request):
         password2 = request.POST.get("password2")
         role = request.POST.get("role")
 
+        if not username or not email or not password1 or not password2 or not role:
+            messages.error(request, "Пожалуйста, заполните все поля.")
+            return redirect("register")
+
+        try:
+            validate_email(email)
+        except ValidationError:
+            messages.error(request, "Введите корректный email.")
+            return redirect("register")
+
         if password1 != password2:
             messages.error(request, "Пароли не совпадают!")
             return redirect("register")
@@ -123,11 +136,16 @@ def user_register(request):
             messages.error(request, "Пользователь с таким email уже существует!")
             return redirect("register")
 
+        if role not in ["student", "employer"]:
+            messages.error(request, "Выберите корректную роль.")
+            return redirect("register")
+
         user = User.objects.create_user(username=username, email=email, password=password1)
         Profile.objects.create(user=user, role=role)
 
-        messages.success(request, "Регистрация успешна! Теперь войдите в систему.")
-        return redirect("login")
+        login(request, user)
+        messages.success(request, "Регистрация успешна! Вы вошли в систему.")
+        return redirect("home")
 
     return render(request, "register.html")
 

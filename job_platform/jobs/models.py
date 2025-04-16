@@ -3,11 +3,11 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 
 class Vacancy(models.Model):
-    title = models.CharField(max_length=255)
-    description = models.TextField()
-    city = models.CharField(max_length=100, default="Unknown")
-    salary_min = models.PositiveIntegerField(default="0")
-    salary_max = models.PositiveIntegerField(default="0")
+    title = models.CharField(max_length=255, default='')
+    description = models.TextField(default='')
+    city = models.CharField(max_length=100, default='')
+    salary_min = models.PositiveIntegerField(default='')
+    salary_max = models.PositiveIntegerField(default='')
     currency = models.CharField(max_length=10, choices=[("RUB", "₽"), ("USD", "$"), ("EUR", "€")], default="RUB")
     deadline = models.DateField(default="2025-12-31")
     employer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
